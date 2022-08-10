@@ -1,6 +1,7 @@
 package health
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -32,6 +33,7 @@ type Service struct {
 	ResponseTimeMilli int64     `json:"responseTimeMilli"`
 	ResponseTimeMicro int64     `json:"responseTimeMicro"`
 	LastSeen          time.Time `json:"lastSeen"`
+	Error             string    `json:"error,omitempty"`
 }
 
 func (service *Service) check(httpClient *http.Client, checkInterval time.Duration) {
@@ -42,16 +44,23 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 
 		if err != nil {
 			logger.Println(err)
+
 			service.Ok = false
 			service.ResponseTimeMilli = 0
 			service.ResponseTimeMicro = 0
+			service.Error = err.Error()
 		} else {
 			if resp.StatusCode != 200 {
-				logger.Printf("%v returned invalid status code %v", service.Url, resp.StatusCode)
+				err := fmt.Errorf("%v returned invalid status code %v", service.Url, resp.StatusCode)
+				logger.Println(err)
+
 				service.Ok = false
+				service.Error = err.Error()
 			} else {
-				// utils.Log.Printf("%v returned valid status code %v", service.Url, resp.StatusCode)
+				// logger.Printf("%v returned valid status code %v", service.Url, resp.StatusCode)
+
 				service.Ok = true
+				service.Error = ""
 			}
 
 			service.ResponseTimeMilli = endTime.UnixMilli() - startTime.UnixMilli()

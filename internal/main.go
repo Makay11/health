@@ -11,7 +11,7 @@ import (
 func main() {
 	go startTestApi()
 
-	time.Sleep(time.Second)
+	time.Sleep(100 * time.Millisecond)
 
 	err := health.Start(
 		":80",
