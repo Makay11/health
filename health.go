@@ -1,6 +1,7 @@
 package health
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,13 +28,37 @@ func Start(port, path string, requestTimeout, checkInterval time.Duration, servi
 }
 
 type Service struct {
-	Name              string    `json:"name"`
-	Url               string    `json:"url"`
-	Ok                bool      `json:"ok"`
-	ResponseTimeMilli int64     `json:"responseTimeMilli"`
-	ResponseTimeMicro int64     `json:"responseTimeMicro"`
-	LastSeen          time.Time `json:"lastSeen"`
-	Error             string    `json:"error,omitempty"`
+	Name              string
+	Url               string
+	Ok                bool
+	ResponseTimeMilli int64
+	ResponseTimeMicro int64
+	LastSeen          time.Time
+	Error             error
+}
+
+func (service *Service) MarshalJSON() ([]byte, error) {
+	m := fiber.Map{
+		"name":              service.Name,
+		"url":               service.Url,
+		"ok":                service.Ok,
+		"responseTimeMilli": service.ResponseTimeMilli,
+		"responseTimeMicro": service.ResponseTimeMicro,
+	}
+
+	if service.LastSeen.IsZero() {
+		m["lastSeen"] = nil
+	} else {
+		m["lastSeen"] = service.LastSeen
+	}
+
+	if service.Error == nil {
+		m["error"] = nil
+	} else {
+		m["error"] = service.Error.Error()
+	}
+
+	return json.Marshal(m)
 }
 
 func (service *Service) check(httpClient *http.Client, checkInterval time.Duration) {
@@ -48,19 +73,19 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 			service.Ok = false
 			service.ResponseTimeMilli = 0
 			service.ResponseTimeMicro = 0
-			service.Error = err.Error()
+			service.Error = err
 		} else {
 			if resp.StatusCode != 200 {
 				err := fmt.Errorf("%v returned invalid status code %v", service.Url, resp.StatusCode)
 				logger.Println(err)
 
 				service.Ok = false
-				service.Error = err.Error()
+				service.Error = err
 			} else {
 				// logger.Printf("%v returned valid status code %v", service.Url, resp.StatusCode)
 
 				service.Ok = true
-				service.Error = ""
+				service.Error = nil
 			}
 
 			service.ResponseTimeMilli = endTime.UnixMilli() - startTime.UnixMilli()
