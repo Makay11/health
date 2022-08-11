@@ -30,32 +30,32 @@ func Start(port, path string, requestTimeout, checkInterval time.Duration, servi
 type Service struct {
 	Name              string
 	Url               string
-	Ok                bool
-	ResponseTimeMilli int64
-	ResponseTimeMicro int64
-	LastSeen          time.Time
-	Error             error
+	ok                bool
+	responseTimeMilli int64
+	responseTimeMicro int64
+	lastSeen          time.Time
+	error             error
 }
 
 func (service *Service) MarshalJSON() ([]byte, error) {
 	m := fiber.Map{
 		"name":              service.Name,
 		"url":               service.Url,
-		"ok":                service.Ok,
-		"responseTimeMilli": service.ResponseTimeMilli,
-		"responseTimeMicro": service.ResponseTimeMicro,
+		"ok":                service.ok,
+		"responseTimeMilli": service.responseTimeMilli,
+		"responseTimeMicro": service.responseTimeMicro,
 	}
 
-	if service.LastSeen.IsZero() {
+	if service.lastSeen.IsZero() {
 		m["lastSeen"] = nil
 	} else {
-		m["lastSeen"] = service.LastSeen
+		m["lastSeen"] = service.lastSeen
 	}
 
-	if service.Error == nil {
+	if service.error == nil {
 		m["error"] = nil
 	} else {
-		m["error"] = service.Error.Error()
+		m["error"] = service.error.Error()
 	}
 
 	return json.Marshal(m)
@@ -70,27 +70,27 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 		if err != nil {
 			logger.Println(err)
 
-			service.Ok = false
-			service.ResponseTimeMilli = 0
-			service.ResponseTimeMicro = 0
-			service.Error = err
+			service.ok = false
+			service.responseTimeMilli = 0
+			service.responseTimeMicro = 0
+			service.error = err
 		} else {
 			if resp.StatusCode != 200 {
 				err := fmt.Errorf("%v returned invalid status code %v", service.Url, resp.StatusCode)
 				logger.Println(err)
 
-				service.Ok = false
-				service.Error = err
+				service.ok = false
+				service.error = err
 			} else {
 				// logger.Printf("%v returned valid status code %v", service.Url, resp.StatusCode)
 
-				service.Ok = true
-				service.Error = nil
+				service.ok = true
+				service.error = nil
 			}
 
-			service.ResponseTimeMilli = endTime.UnixMilli() - startTime.UnixMilli()
-			service.ResponseTimeMicro = endTime.UnixMicro() - startTime.UnixMicro()
-			service.LastSeen = endTime
+			service.responseTimeMilli = endTime.UnixMilli() - startTime.UnixMilli()
+			service.responseTimeMicro = endTime.UnixMicro() - startTime.UnixMicro()
+			service.lastSeen = endTime
 		}
 
 		time.Sleep(checkInterval)
