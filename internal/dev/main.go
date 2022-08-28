@@ -13,12 +13,12 @@ func main() {
 
 	time.Sleep(100 * time.Millisecond)
 
-	err := health.Start(
-		":80",
-		"/",
-		30*time.Second,
-		10*time.Second,
-		[]health.Service{
+	err := health.Start(health.Config{
+		Port:           ":80",
+		Path:           "/",
+		RequestTimeout: 30 * time.Second,
+		CheckInterval:  10 * time.Second,
+		Services: []health.ServiceConfig{
 			{
 				Name: "status",
 				Url:  "http://localhost",
@@ -36,7 +36,7 @@ func main() {
 				Url:  "http://localhost:3000/api/slow",
 			},
 		},
-	)
+	})
 
 	log.Fatalln(err)
 }

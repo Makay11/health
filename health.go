@@ -10,27 +10,47 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Start(port, path string, requestTimeout, checkInterval time.Duration, services []Service) error {
+type Config struct {
+	Port           string
+	Path           string
+	RequestTimeout time.Duration
+	CheckInterval  time.Duration
+	Services       []ServiceConfig
+}
+
+type ServiceConfig struct {
+	Name string
+	Url  string
+}
+
+func Start(config Config) error {
 	httpClient := http.Client{
-		Timeout: requestTimeout,
+		Timeout: config.RequestTimeout,
 	}
 
-	for i := range services {
-		go services[i].check(&httpClient, checkInterval)
+	services := make([]service, len(config.Services))
+
+	for i, serviceConfig := range config.Services {
+		services[i] = service{
+			name: serviceConfig.Name,
+			url:  serviceConfig.Url,
+		}
+
+		go services[i].check(&httpClient, config.CheckInterval)
 	}
 
 	app := fiber.New()
 
-	app.Get(path, func(c *fiber.Ctx) error {
+	app.Get(config.Path, func(c *fiber.Ctx) error {
 		return c.JSON(services)
 	})
 
-	return app.Listen(port)
+	return app.Listen(config.Port)
 }
 
-type Service struct {
-	Name              string
-	Url               string
+type service struct {
+	name              string
+	url               string
 	ok                bool
 	responseTimeMilli int64
 	responseTimeMicro int64
@@ -38,10 +58,10 @@ type Service struct {
 	error             error
 }
 
-func (service *Service) MarshalJSON() ([]byte, error) {
+func (service *service) MarshalJSON() ([]byte, error) {
 	m := fiber.Map{
-		"name":              service.Name,
-		"url":               service.Url,
+		"name":              service.name,
+		"url":               service.url,
 		"ok":                service.ok,
 		"responseTimeMilli": service.responseTimeMilli,
 		"responseTimeMicro": service.responseTimeMicro,
@@ -62,10 +82,10 @@ func (service *Service) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func (service *Service) check(httpClient *http.Client, checkInterval time.Duration) {
+func (service *service) check(httpClient *http.Client, checkInterval time.Duration) {
 	for {
 		startTime := time.Now()
-		resp, err := httpClient.Head(service.Url)
+		resp, err := httpClient.Head(service.url)
 		endTime := time.Now()
 
 		if err != nil {
@@ -77,7 +97,7 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 			service.error = err
 		} else {
 			if resp.StatusCode != 200 {
-				err := fmt.Errorf("%v returned invalid status code %v", service.Url, resp.StatusCode)
+				err := fmt.Errorf("%v returned invalid status code %v", service.url, resp.StatusCode)
 				utils.Logger.Println(err)
 
 				service.ok = false

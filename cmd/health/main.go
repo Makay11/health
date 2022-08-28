@@ -12,13 +12,13 @@ import (
 func main() {
 	config := getConfig()
 
-	port := config.getString("port")
-	path := config.getString("path")
-	requestTimeout := config.getDuration("requestTimeout")
-	checkInterval := config.getDuration("checkInterval")
-	services := config.getServices("services")
-
-	health.Start(port, path, requestTimeout, checkInterval, services)
+	health.Start(health.Config{
+		Port:           config.getString("port"),
+		Path:           config.getString("path"),
+		RequestTimeout: config.getDuration("requestTimeout"),
+		CheckInterval:  config.getDuration("checkInterval"),
+		Services:       config.getServices("services"),
+	})
 }
 
 func getConfig() (config jsonObject) {
@@ -75,15 +75,15 @@ func (object jsonObject) getString(key string) string {
 	return getObjectValue[string](object, key)
 }
 
-func (object jsonObject) getServices(key string) (services []health.Service) {
+func (object jsonObject) getServices(key string) (services []health.ServiceConfig) {
 	rawServices := object.getArray(key)
 
-	services = make([]health.Service, len(rawServices))
+	services = make([]health.ServiceConfig, len(rawServices))
 
 	for i, rawService := range rawServices {
 		o := jsonObject(castValue[map[string]any](rawService))
 
-		services[i] = health.Service{
+		services[i] = health.ServiceConfig{
 			Name: o.getString("name"),
 			Url:  o.getString("url"),
 		}
