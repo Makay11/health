@@ -18,8 +18,6 @@ func main() {
 	checkInterval := config.getDuration("checkInterval")
 	services := config.getServices("services")
 
-	fmt.Println(port, path, requestTimeout, checkInterval, services)
-
 	health.Start(port, path, requestTimeout, checkInterval, services)
 }
 
