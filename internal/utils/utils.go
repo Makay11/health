@@ -1,4 +1,4 @@
-package health
+package utils
 
 import (
 	"log"
@@ -7,4 +7,4 @@ import (
 
 const loggerFlags = log.Ldate | log.Lmicroseconds | log.Lshortfile
 
-var logger = log.New(os.Stderr, "", loggerFlags)
+var Logger = log.New(os.Stderr, "[health] ", loggerFlags)

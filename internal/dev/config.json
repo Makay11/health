@@ -1,0 +1,12 @@
+{
+	"port": ":3000",
+	"path": "/",
+	"requestTimeout": 30000,
+	"checkInterval": 10000,
+	"services": [
+		{
+			"name": "google.com",
+			"url": "https://google.com"
+		}
+	]
+}

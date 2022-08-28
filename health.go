@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Makay11/health/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -68,7 +69,7 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 		endTime := time.Now()
 
 		if err != nil {
-			logger.Println(err)
+			utils.Logger.Println(err)
 
 			service.ok = false
 			service.responseTimeMilli = 0
@@ -77,7 +78,7 @@ func (service *Service) check(httpClient *http.Client, checkInterval time.Durati
 		} else {
 			if resp.StatusCode != 200 {
 				err := fmt.Errorf("%v returned invalid status code %v", service.Url, resp.StatusCode)
-				logger.Println(err)
+				utils.Logger.Println(err)
 
 				service.ok = false
 				service.error = err
