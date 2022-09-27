@@ -1,0 +1,9 @@
+services:
+  health:
+    container_name: health
+    build: .
+    volumes:
+      - ./internal/dev/config.json:/config.json:ro
+    ports:
+      - 3000:3000
+    command: /config.json
